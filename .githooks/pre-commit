@@ -66,4 +66,4 @@ if ! git diff --quiet -- "${files[@]}"; then
 fi
 
 printf '%s\n' "pre-commit: running shellcheck"
-run_tool shellcheck "${files[@]}"
+run_tool shellcheck -P SCRIPTDIR "${files[@]}"

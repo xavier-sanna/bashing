@@ -7,6 +7,23 @@ shfmt = "latest"
 description = "Run the Bats test suite"
 run = "bats tests"
 
+[tasks."lint:shellcheck"]
+description = "Run ShellCheck on shell sources, examples, and tests"
+run = """
+shellcheck -P SCRIPTDIR \
+  .githooks/pre-commit \
+  install.sh \
+  demo.sh \
+  src/*.sh \
+  src/utils/*.sh \
+  src/docker/*.sh \
+  src/ui/*.sh \
+  src/privileges/*.sh \
+  examples/* \
+  tests/*.bats \
+  tests/test_helper/*.bash
+"""
+
 [tasks."hooks:install"]
 description = "Enable versioned Git hooks for this repository"
 run = "git config core.hooksPath .githooks"
