@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-REPO_URL=https://github.com/xavier-sanna/bashing.git
+REPO_URL="${BASHING_REPO_URL:-https://github.com/xavier-sanna/bashing.git}"
 START_MARKER='###> bashing ###'
 END_MARKER='###< bashing ###'
 
