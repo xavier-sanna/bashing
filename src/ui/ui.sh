@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # ui.sh — hr, section, indent, color_box, table
 
-if [[ -n "${__BASHLIB_UI:-}" ]]; then return 0 2>/dev/null || exit 0; fi
+if [[ -n "${__BASHLIB_UI:-}" ]]; then
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
+fi
 __BASHLIB_UI=1
 
 # Choose drawing characters safely (ASCII fallback)
@@ -162,7 +167,8 @@ title() {
 	local pad="${TITLE_PADDING:-3}"
 	local icon="${TITLE_ICON:-}"
 	local icon_w="${TITLE_ICON_W:-2}"
-	local cols="$(__bashlib_cols)"
+	local term_cols
+	term_cols="$(__bashlib_cols)"
 
 	[[ "$upper" == "1" ]] && main="$(__bashlib_to_upper "$main")"
 
@@ -201,7 +207,7 @@ title() {
 
 		# Inner width based on plain text + padding + icon_extra
 		local inner_width=$((${#plain} + pad * 2 + icon_extra))
-		((inner_width > cols - 4)) && inner_width=$((cols - 4))
+		((inner_width > term_cols - 4)) && inner_width=$((term_cols - 4))
 		((inner_width < 6)) && inner_width=6
 
 		# Horizontal border
@@ -212,7 +218,7 @@ title() {
 		# Left indent for centering entire box
 		local left=0
 		if [[ "$align" == "center" ]]; then
-			left=$(((cols - inner_width - 2) / 2))
+			left=$(((term_cols - inner_width - 2) / 2))
 			((left < 0)) && left=0
 		fi
 
@@ -248,9 +254,9 @@ title() {
 	block)
 		local block
 		if __bashlib_is_utf8; then block='█'; else block='#'; fi
-		printf '%b\n' "$(color_text "$style" "$(__bashlib_repeat "$block" "$cols")")"
+		printf '%b\n' "$(color_text "$style" "$(__bashlib_repeat "$block" "$term_cols")")"
 		printf '%b\n' "$(color_text "$style" "${block}  ${icon:+$icon }${text}  ${block}")"
-		printf '%b\n' "$(color_text "$style" "$(__bashlib_repeat "$block" "$cols")")"
+		printf '%b\n' "$(color_text "$style" "$(__bashlib_repeat "$block" "$term_cols")")"
 		;;
 
 	underline)

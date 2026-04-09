@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # colors.sh — color/style primitives (tput with ANSI fallback)
 
-if [[ -n "${__BASHLIB_COLORS:-}" ]]; then return 0 2>/dev/null || exit 0; fi
+if [[ -n "${__BASHLIB_COLORS:-}" ]]; then
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
+fi
 __BASHLIB_COLORS=1
 
 : "${COLOR_EMOJI:=1}" # set to 0 to disable emoji

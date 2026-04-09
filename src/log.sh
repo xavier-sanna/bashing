@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # log.sh — pretty logging with levels
 
-if [[ -n "${__BASHLIB_LOG:-}" ]]; then return 0 2>/dev/null || exit 0; fi
+if [[ -n "${__BASHLIB_LOG:-}" ]]; then
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
+fi
 __BASHLIB_LOG=1
 
 : "${LOG_LEVEL:=info}"  # debug, info, warn, error, none
@@ -29,7 +34,8 @@ if [[ "${COLOR_EMOJI:-1}" == 1 ]]; then
 fi
 
 __log_emit() { # $1=level $2=color $3=prefix $4=msg
-	local want=$(__log_level_num "$1")
+	local want
+	want=$(__log_level_num "$1")
 	((want < __LOG_THRESHOLD)) && return 0
 	printf '%b\n' "$(color_text "$2" "$3 $4")" | __log_out
 }

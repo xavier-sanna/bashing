@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # utils.sh — environment detection & small helpers
 
-if [[ -n "${__BASHLIB_UTILS:-}" ]]; then return 0 2>/dev/null || exit 0; fi
+if [[ -n "${__BASHLIB_UTILS:-}" ]]; then
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
+fi
 __BASHLIB_UTILS=1
 
 # TTY check

@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # progress.sh — simple in-place progress bar
 
-if [[ -n "${__BASHLIB_PROGRESS:-}" ]]; then return 0 2>/dev/null || exit 0; fi
+if [[ -n "${__BASHLIB_PROGRESS:-}" ]]; then
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
+fi
 __BASHLIB_PROGRESS=1
 
 progress_bar() {

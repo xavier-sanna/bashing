@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # spinner.sh — spinner_start/spinner_stop
 
-if [[ -n "${__BASHLIB_SPINNER:-}" ]]; then return 0 2>/dev/null || exit 0; fi
+if [[ -n "${__BASHLIB_SPINNER:-}" ]]; then
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
+fi
 __BASHLIB_SPINNER=1
 
 __BASHLIB_SPIN_PID=""
@@ -13,7 +18,7 @@ spinner_start() {
 		return
 	fi
 	local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
-	__bashlib_is_utf8 || frames=('-' '\' '|' '/')
+	__bashlib_is_utf8 || frames=('-' "\\" '|' '/')
 	command -v tput >/dev/null 2>&1 && tput civis 2>/dev/null || true
 	(
 		local i=0

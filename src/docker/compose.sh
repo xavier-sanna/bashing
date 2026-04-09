@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-if [[ -n "${__BASHLIB_COMPOSE:-}" ]]; then return 0 2>/dev/null || exit 0; fi
+if [[ -n "${__BASHLIB_COMPOSE:-}" ]]; then
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
+fi
 __BASHLIB_COMPOSE=1
 
 detect_compose() {

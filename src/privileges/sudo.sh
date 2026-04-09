@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 # sudo.sh — opt-in sudo helpers with optional prompt puns
 
-if [[ -n "${__BASHLIB_SUDO:-}" ]]; then return 0 2>/dev/null || exit 0; fi
+if [[ -n "${__BASHLIB_SUDO:-}" ]]; then
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
+fi
 __BASHLIB_SUDO=1
 
+# shellcheck disable=SC2034 # Public state variable for consumers after sudo_run.
 SUDO_USED=0
 
 __bashlib_sudo_root() {
@@ -149,6 +155,7 @@ sudo_run() {
 			;;
 		esac
 		code=$?
+		# shellcheck disable=SC2034 # Public state variable for consumers after sudo_run.
 		((code == 0)) && SUDO_USED=1
 		return "$code"
 	fi
@@ -168,6 +175,7 @@ sudo_run() {
 	esac
 	code=$?
 
+	# shellcheck disable=SC2034 # Public state variable for consumers after sudo_run.
 	((code == 0)) && SUDO_USED=1
 	return "$code"
 }

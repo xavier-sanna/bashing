@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # status.sh — with_status wrapper (spinner + elapsed time)
 
-if [[ -n "${__BASHLIB_STATUS:-}" ]]; then return 0 2>/dev/null || exit 0; fi
+if [[ -n "${__BASHLIB_STATUS:-}" ]]; then
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
+fi
 __BASHLIB_STATUS=1
 
 with_status() {

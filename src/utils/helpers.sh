@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 if [[ -n "${__BASHLIB_HELPERS:-}" ]]; then
-	return 0 2>/dev/null || exit 0
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
 fi
 __BASHLIB_HELPERS=1
 

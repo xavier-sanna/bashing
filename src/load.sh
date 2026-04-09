@@ -3,7 +3,10 @@
 
 # Guard against re-sourcing
 if [[ -n "${__BASHLIB_LOADED:-}" ]]; then
-	return 0 2>/dev/null || exit 0
+	if (return 0 2>/dev/null); then
+		return 0
+	fi
+	exit 0
 fi
 __BASHLIB_LOADED=1
 
@@ -24,7 +27,10 @@ __bashlib_readlink() {
 if [[ -z "${BASHLIB_ROOT:-}" ]]; then
 	BASHLIB_ROOT="$(__bashlib_readlink "${BASH_SOURCE[0]}")" || {
 		printf 'Failed to resolve BASHLIB_ROOT from %s\n' "${BASH_SOURCE[0]}" >&2
-		return 1 2>/dev/null || exit 1
+		if (return 0 2>/dev/null); then
+			return 1
+		fi
+		exit 1
 	}
 fi
 
