@@ -1,4 +1,8 @@
 [tools]
+bats = "latest"
 shellcheck = "latest"
-shellspec = "latest"
 shfmt = "latest"
+
+[tasks.test]
+description = "Run the Bats test suite"
+run = "bats tests"
