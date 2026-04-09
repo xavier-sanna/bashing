@@ -96,6 +96,14 @@ Run the Bats test suite with:
 mise run test
 ```
 
+Run ShellCheck with:
+
+```bash
+mise run lint:shellcheck
+```
+
+CI runs both commands on GitHub Actions.
+
 Enable the repository Git hooks with:
 
 ```bash
