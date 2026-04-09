@@ -1,0 +1,230 @@
+#!/usr/bin/env bash
+
+#MISE description="Create/update project SSL certificates"
+
+# Example task: generate local TLS certificates for a Docker/Traefik project.
+#
+# This demonstrates the usual bashing integration pattern:
+# - source bashing/bootstrap.sh relative to this script, not from $PWD
+# - read project context from PROJECT_ROOT, TASK_DIR, TASK_FILE, and BASHLIB_ROOT
+# - load .env values with dotenv_load
+# - render terminal output with title, color_box, indent, log_info, log_warn,
+#   log_error, and log_success
+# - wrap long-running commands with with_status
+# - use can_sudo and sudo_run for optional privileged operations
+#
+# Sourcing "$(dirname "${BASH_SOURCE[0]}")/bashing/bootstrap.sh" is recommended
+# because task scripts are often launched from different working directories:
+# directly, through make, or as mise file tasks. Resolving the library relative to
+# the script makes the task portable and lets bootstrap.sh normalize paths before
+# loading the rest of the library. After sourcing, PROJECT_ROOT points at the
+# nearest parent project marker (.git, mise.toml, or docker-compose.yaml), while
+# TASK_DIR/TASK_FILE keep the actual task location available.
+
+set -euo pipefail
+IFS=$'\n\t'
+
+# Install bashing next to this task script, for example in scripts/bashing.
+# shellcheck source=./bashing/bootstrap.sh
+source "$(dirname "${BASH_SOURCE[0]}")/bashing/bootstrap.sh"
+
+print_install_hint() {
+	local content
+
+	case "${OSTYPE:-}" in
+	linux-gnu*)
+		content=$'sudo apt install mkcert        # Debian/Ubuntu\nsudo pacman -S mkcert          # Arch Linux\nbrew install mkcert            # Linuxbrew'
+		;;
+	darwin*)
+		content='brew install mkcert'
+		;;
+	*)
+		content='Install mkcert manually: https://github.com/FiloSottile/mkcert'
+		;;
+	esac
+
+	color_box "Install mkcert" "$content" "$C_YELLOW"
+}
+
+ensure_mkcert() {
+	command -v mkcert >/dev/null 2>&1 && return 0
+
+	log_error "mkcert is not installed."
+	print_install_hint
+	exit 1
+}
+
+resolve_project_name() {
+	if [[ -n "${PROJECT_NAME:-}" ]]; then
+		printf '%s' "$PROJECT_NAME"
+		return 0
+	fi
+
+	printf '%s' "${PROJECT_ROOT##*/}"
+}
+
+domain_exists() {
+	local needle="$1"
+	local value
+
+	shift
+
+	for value in "$@"; do
+		[[ "$value" == "$needle" ]] && return 0
+	done
+
+	return 1
+}
+
+collect_domains() {
+	local var_name domain
+
+	DOMAINS=(localhost 127.0.0.1 ::1)
+	HOST_DOMAINS=()
+	HOST_DOMAIN_COUNT=0
+
+	while IFS= read -r var_name; do
+		[[ -n "$var_name" ]] || continue
+
+		domain="${!var_name:-}"
+		domain="$(__bashlib_trim_leading "$domain")"
+		domain="$(__bashlib_trim_trailing "$domain")"
+		[[ -n "$domain" ]] || continue
+
+		if ! domain_exists "$domain" "${DOMAINS[@]}"; then
+			DOMAINS+=("$domain")
+		fi
+
+		case "$domain" in
+		localhost | 127.0.0.1 | ::1) continue ;;
+		esac
+
+		if ((HOST_DOMAIN_COUNT == 0)) || ! domain_exists "$domain" "${HOST_DOMAINS[@]}"; then
+			HOST_DOMAINS+=("$domain")
+			HOST_DOMAIN_COUNT=$((HOST_DOMAIN_COUNT + 1))
+		fi
+	done < <(compgen -A variable APP_HOST_ || true)
+}
+
+build_hosts_block() {
+	local domain content="" i
+	local host_domain_count="${HOST_DOMAIN_COUNT:-0}"
+
+	if ((host_domain_count == 0)); then
+		return 1
+	fi
+
+	for ((i = 0; i < host_domain_count; i++)); do
+		domain="${HOST_DOMAINS[i]}"
+		content+="127.0.0.1         ${domain}"$'\n'
+	done
+
+	printf '%s\n%s\n%s\n' "$BEGIN_DELIMITER" "${content%$'\n'}" "$END_DELIMITER"
+}
+
+update_etc_hosts() {
+	local tmp_file hosts_block
+
+	hosts_block="$(build_hosts_block)" || {
+		log_info "No additional /etc/hosts entries are required."
+		return 0
+	}
+
+	tmp_file="$(mktemp "${TMPDIR:-/tmp}/update-certs-hosts.XXXXXX")" || {
+		log_error "Unable to create a temporary file for /etc/hosts update."
+		return 1
+	}
+
+	if ! awk -v begin="$BEGIN_DELIMITER" -v end="$END_DELIMITER" '
+    $0 == begin { skipping = 1; next }
+    $0 == end { skipping = 0; next }
+    !skipping { lines[++count] = $0 }
+    END {
+      while (count > 0 && lines[count] == "") {
+        count--
+      }
+
+      for (i = 1; i <= count; i++) {
+        print lines[i]
+      }
+    }
+  ' /etc/hosts >"$tmp_file"; then
+		rm -f "$tmp_file"
+		log_error "Unable to prepare an updated /etc/hosts file."
+		return 1
+	fi
+
+	if [[ -s "$tmp_file" ]]; then
+		if ! {
+			cat "$tmp_file"
+			printf '\n%s\n' "$hosts_block"
+		} | sudo_run tee /etc/hosts >/dev/null; then
+			rm -f "$tmp_file"
+			return 1
+		fi
+	else
+		if ! printf '%s\n' "$hosts_block" | sudo_run tee /etc/hosts >/dev/null; then
+			rm -f "$tmp_file"
+			return 1
+		fi
+	fi
+
+	rm -f "$tmp_file"
+	log_success "Updated /etc/hosts"
+}
+
+print_hosts_block() {
+	local hosts_block
+
+	hosts_block="$(build_hosts_block)" || {
+		log_info "No additional /etc/hosts entries are required."
+		return 0
+	}
+
+	log_warn "Manual step required: append these entries to /etc/hosts."
+	color_box "/etc/hosts entries" "$hosts_block" "$C_MAGENTA"
+}
+
+dotenv_load "$PROJECT_ROOT/.env"
+PROJECT_NAME="$(resolve_project_name)"
+PROJECT_NAME_UPPER="$(__bashlib_to_upper "$PROJECT_NAME")"
+BEGIN_DELIMITER="### BEGIN ${PROJECT_NAME_UPPER} HOSTS ###"
+END_DELIMITER="### END ${PROJECT_NAME_UPPER} HOSTS ###"
+
+ensure_mkcert
+collect_domains
+
+cert_dir="${CERT_DIR:-$PROJECT_ROOT/infra/docker/traefik/certs}"
+cert_file="${CERT_FILE:-$cert_dir/cert.pem}"
+key_file="${KEY_FILE:-$cert_dir/key.pem}"
+caroot_dir="$(mkcert -CAROOT)"
+
+mkdir -p "$cert_dir"
+
+TITLE_ALIGN=left TITLE_ICON="🔧" TITLE_ICON_W=2 title "Local SSL Certificates" "$PROJECT_NAME"
+log_info "Output directory: $cert_dir"
+color_box "Certificate domains" "$(printf '%s\n' "${DOMAINS[@]}")" "$C_GREEN"
+
+with_status "Installing local CA" mkcert -install
+
+cp "$caroot_dir/rootCA.pem" "$cert_dir/rootCA.pem"
+
+log_info "Generating certificate files"
+if ! mkcert_output=$(mkcert -key-file "$key_file" -cert-file "$cert_file" "${DOMAINS[@]}" 2>&1); then
+	log_error "Certificate generation failed."
+	[[ -n "$mkcert_output" ]] && printf '%s\n' "$mkcert_output" | indent '  ' >&2
+	exit 1
+fi
+
+log_success "Certificates generated at: $cert_dir"
+
+if can_sudo; then
+	if ! update_etc_hosts; then
+		log_warn "Automatic /etc/hosts update failed."
+		print_hosts_block
+	fi
+else
+	print_hosts_block
+fi
+
+# vim: ft=bash
