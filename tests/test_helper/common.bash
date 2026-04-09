@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2034
+
 _bashing_create_source_repo() {
 	SOURCE_REPO="$(mktemp -d "${TMPDIR:-/tmp}/bashing-source.XXXXXX")" || return 1
 
@@ -39,6 +42,14 @@ assert_file_executable() {
 
 assert_file_contains() {
 	grep -Fq "$2" "$1"
+}
+
+assert_file_not_contains() {
+	if grep -Fq "$2" "$1"; then
+		return 1
+	fi
+
+	return 0
 }
 
 assert_installed_tree() {

@@ -26,6 +26,7 @@ IFS=$'\n\t'
 
 # Install bashing next to this task script, for example in scripts/bashing.
 # shellcheck source=./bashing/bootstrap.sh
+# shellcheck disable=SC1091
 source "$(dirname "${BASH_SOURCE[0]}")/bashing/bootstrap.sh"
 
 print_install_hint() {
