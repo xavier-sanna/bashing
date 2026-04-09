@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+run_tool() {
+	if command -v mise >/dev/null 2>&1; then
+		MISE_CACHE_DIR="${MISE_CACHE_DIR:-${TMPDIR:-/tmp}/mise-cache}" mise exec -- "$@"
+		return
+	fi
+
+	"$@"
+}
+
+is_shell_file() {
+	local path="$1"
+	local first_line
+
+	case "$path" in
+	*.bash | *.bats | *.sh) return 0 ;;
+	esac
+
+	IFS= read -r first_line <"$path" || first_line=""
+	[[ "$first_line" == '#!'*bash* || "$first_line" == '#!'*sh* ]]
+}
+
+staged_shell_files() {
+	local path
+
+	while IFS= read -r path; do
+		[[ -f "$path" ]] || continue
+		is_shell_file "$path" || continue
+		printf '%s\n' "$path"
+	done < <(git diff --cached --name-only --diff-filter=ACMR --)
+}
+
+mapfile -t files < <(staged_shell_files)
+
+if ((${#files[@]} == 0)); then
+	exit 0
+fi
+
+partially_staged=()
+for file in "${files[@]}"; do
+	if ! git diff --quiet -- "$file" && ! git diff --cached --quiet -- "$file"; then
+		partially_staged+=("$file")
+	fi
+done
+
+if ((${#partially_staged[@]} > 0)); then
+	printf '%s\n' "pre-commit: refusing to format partially staged files:" >&2
+	printf '  %s\n' "${partially_staged[@]}" >&2
+	printf '%s\n' "Stage or stash the unstaged changes before committing." >&2
+	exit 1
+fi
+
+printf '%s\n' "pre-commit: formatting shell files with shfmt --write"
+run_tool shfmt --write "${files[@]}"
+
+if ! git diff --quiet -- "${files[@]}"; then
+	printf '%s\n' "pre-commit: shfmt updated files. Review and stage these changes, then commit again:" >&2
+	git diff --name-only -- "${files[@]}" >&2
+	exit 1
+fi
+
+printf '%s\n' "pre-commit: running shellcheck"
+run_tool shellcheck "${files[@]}"

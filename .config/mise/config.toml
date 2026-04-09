@@ -6,3 +6,7 @@ shfmt = "latest"
 [tasks.test]
 description = "Run the Bats test suite"
 run = "bats tests"
+
+[tasks."hooks:install"]
+description = "Enable versioned Git hooks for this repository"
+run = "git config core.hooksPath .githooks"
