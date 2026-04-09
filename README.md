@@ -72,13 +72,22 @@ The example uses helpers from multiple modules: `dotenv_load` from `utils/helper
 
 Use `detect_task_runner "$TASK_FILE"` when behavior needs to vary by launcher. It returns `mise` when `MISE_TASK_FILE` matches the current script, `make` when `MAKELEVEL` or `MAKEFLAGS` are present, and `direct` otherwise.
 
+## Demo
+Run the local demo script to see the modules in action without modifying your system:
+
+```bash
+./demo.sh
+```
+
+It demonstrates bootstrap variables, dotenv parsing, colors/logging, UI helpers, spinners/status output, progress bars, sudo helpers, Docker Compose detection, and the install/update entrypoints. Docker Compose and sudo operations are detected and skipped unless safe.
+
 ## Development
 Library sources live under `src/`. The installer copies those files into the consumer project's `bashing/` directory.
 
 Validate the shell scripts with:
 
 ```bash
-bash -n install.sh src/*.sh src/utils/*.sh src/docker/*.sh src/ui/*.sh src/privileges/*.sh examples/* tests/test_helper/*.bash
+bash -n install.sh demo.sh src/*.sh src/utils/*.sh src/docker/*.sh src/ui/*.sh src/privileges/*.sh examples/* tests/test_helper/*.bash
 ```
 
 Run the Bats test suite with:
@@ -86,3 +95,11 @@ Run the Bats test suite with:
 ```bash
 mise run test
 ```
+
+Enable the repository Git hooks with:
+
+```bash
+mise run hooks:install
+```
+
+The pre-commit hook formats staged shell files with `shfmt --write`, stops if formatting changed files so you can stage them, then runs `shellcheck`.
