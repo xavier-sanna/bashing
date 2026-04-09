@@ -10,10 +10,10 @@ __BASHLIB_LOG=1
 __log_out() { if [[ "${LOG_TO_STDERR}" == "1" ]]; then cat >&2; else cat; fi; }
 
 __log_level_num() {
-  case "$1" in
-  debug) echo 10 ;; info) echo 20 ;; warn) echo 30 ;; error) echo 40 ;; none) echo 100 ;;
-  *) echo 20 ;;
-  esac
+	case "$1" in
+	debug) echo 10 ;; info) echo 20 ;; warn) echo 30 ;; error) echo 40 ;; none) echo 100 ;;
+	*) echo 20 ;;
+	esac
 }
 __LOG_THRESHOLD=$(__log_level_num "$LOG_LEVEL")
 
@@ -22,16 +22,16 @@ __sym_success="+"
 __sym_warn="!"
 __sym_error="x"
 if [[ "${COLOR_EMOJI:-1}" == 1 ]]; then
-  __sym_info="ℹ"
-  __sym_success="✔"
-  __sym_warn="⚠"
-  __sym_error="✖"
+	__sym_info="ℹ"
+	__sym_success="✔"
+	__sym_warn="⚠"
+	__sym_error="✖"
 fi
 
 __log_emit() { # $1=level $2=color $3=prefix $4=msg
-  local want=$(__log_level_num "$1")
-  ((want < __LOG_THRESHOLD)) && return 0
-  printf '%b\n' "$(color_text "$2" "$3 $4")" | __log_out
+	local want=$(__log_level_num "$1")
+	((want < __LOG_THRESHOLD)) && return 0
+	printf '%b\n' "$(color_text "$2" "$3 $4")" | __log_out
 }
 
 log_debug() { __log_emit debug "$C_DIM" "·" "$1"; }
