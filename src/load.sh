@@ -29,28 +29,28 @@ if [[ -z "${BASHLIB_ROOT:-}" ]]; then
 fi
 
 # Minimal mode? export BASHLIB_MINIMAL=1 to skip optional modules
-# shellcheck source=./utils.sh
-source "$BASHLIB_ROOT/utils.sh"
+# shellcheck source=./utils/utils.sh
+source "$BASHLIB_ROOT/utils/utils.sh"
 
-# shellcheck source=./helpers.sh
-source "$BASHLIB_ROOT/helpers.sh"
-# shellcheck source=./compose.sh
-source "$BASHLIB_ROOT/compose.sh"
+# shellcheck source=./utils/helpers.sh
+source "$BASHLIB_ROOT/utils/helpers.sh"
+# shellcheck source=./docker/compose.sh
+source "$BASHLIB_ROOT/docker/compose.sh"
 
-# shellcheck source=./colors.sh
-source "$BASHLIB_ROOT/colors.sh"
+# shellcheck source=./ui/colors.sh
+source "$BASHLIB_ROOT/ui/colors.sh"
 # shellcheck source=./log.sh
 source "$BASHLIB_ROOT/log.sh"
-# shellcheck source=./ui.sh
-source "$BASHLIB_ROOT/ui.sh"
-# shellcheck source=./sudo.sh
-source "$BASHLIB_ROOT/sudo.sh"
+# shellcheck source=./ui/ui.sh
+source "$BASHLIB_ROOT/ui/ui.sh"
+# shellcheck source=./privileges/sudo.sh
+source "$BASHLIB_ROOT/privileges/sudo.sh"
 
 if [[ "${BASHLIB_MINIMAL:-0}" != "1" ]]; then
-  # shellcheck source=./spinner.sh
-  source "$BASHLIB_ROOT/spinner.sh"
-  # shellcheck source=./progress.sh
-  source "$BASHLIB_ROOT/progress.sh"
-  # shellcheck source=./status.sh
-  source "$BASHLIB_ROOT/status.sh"
+  # shellcheck source=./ui/spinner.sh
+  source "$BASHLIB_ROOT/ui/spinner.sh"
+  # shellcheck source=./ui/progress.sh
+  source "$BASHLIB_ROOT/ui/progress.sh"
+  # shellcheck source=./ui/status.sh
+  source "$BASHLIB_ROOT/ui/status.sh"
 fi

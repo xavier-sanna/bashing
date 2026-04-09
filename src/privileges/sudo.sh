@@ -39,7 +39,10 @@ __bashlib_sudo_shell() {
 }
 
 __bashlib_sudo_puns_file() {
-  printf '%s/sudo-puns' "${BASHLIB_ROOT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)}"
+  local sudo_dir
+
+  sudo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)" || return 1
+  printf '%s/sudo-puns' "$sudo_dir"
 }
 
 __bashlib_sudo_error() {
