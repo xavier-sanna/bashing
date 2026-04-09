@@ -1,0 +1,5 @@
+external-sources=true
+shell=bash
+color=always
+
+# vim: ft=config
