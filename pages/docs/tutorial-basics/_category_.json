@@ -1,8 +1,8 @@
 {
-  "label": "Tutorial - Basics",
+  "label": "Docs - Basics",
   "position": 2,
   "link": {
     "type": "generated-index",
-    "description": "5 minutes to learn the most important Docusaurus concepts."
+    "description": "Core guides for using the Bashing helper library."
   }
 }
